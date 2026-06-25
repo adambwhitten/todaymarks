@@ -38,7 +38,12 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install dependencies
-        run: pnpm install
+        # pnpm 11 exits non-zero just to warn about esbuild's ignored build
+        # script; the deps still install. Build esbuild explicitly so a genuine
+        # failure surfaces here.
+        run: |
+          pnpm install || true
+          pnpm rebuild esbuild
 
       - name: Build + sign update bundle
         env:

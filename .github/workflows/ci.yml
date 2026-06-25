@@ -22,7 +22,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
-        run: pnpm install
+        # pnpm 11 exits non-zero just to warn about esbuild's ignored build
+        # script; the deps still install. We then build esbuild explicitly so a
+        # genuine failure surfaces here.
+        run: |
+          pnpm install || true
+          pnpm rebuild esbuild
 
       - name: Typecheck frontend
         run: ./node_modules/.bin/tsc --noEmit
