@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Frontend build output
+dist/
+
+# Rust / Tauri build output
+src-tauri/target/
+src-tauri/gen/
+
+# Ship Studio scaffolding metadata (not part of the app)
+.shipstudio/
+
+# Claude Code local config (machine-specific)
+.claude/
+
+# macOS
+.DS_Store
+
+# Logs / editor noise
+*.log
+.vscode/
+.idea/

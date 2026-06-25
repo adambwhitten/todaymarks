@@ -1,0 +1,120 @@
+name: Release
+
+# Push a tag like v0.2.0 to cut a release. Builds Apple Silicon + Intel,
+# signs the update bundles, generates latest.json, and publishes to GitHub
+# Releases (which is what the in-app updater and install.sh read from).
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: aarch64
+          - target: x86_64-apple-darwin
+            arch: x86_64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build + sign update bundle
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: ./node_modules/.bin/tauri build --target ${{ matrix.target }}
+
+      - name: Collect artifacts
+        run: |
+          BUNDLE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          mkdir -p out
+          cp "$BUNDLE"/dmg/*.dmg                "out/Todaymarks_${{ matrix.arch }}.dmg"
+          cp "$BUNDLE"/macos/*.app.tar.gz       "out/Todaymarks_${{ matrix.arch }}.app.tar.gz"
+          cp "$BUNDLE"/macos/*.app.tar.gz.sig   "out/Todaymarks_${{ matrix.arch }}.app.tar.gz.sig"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.arch }}
+          path: out/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Assemble latest.json + release notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+
+          # Pull the top "## ..." section out of RELEASE_NOTES.md (minus its heading).
+          awk '/^## /{c++} c==1{print} c==2{exit}' RELEASE_NOTES.md | tail -n +2 | sed '/^$/d' > notes.md
+          cat notes.md
+
+          SIG_ARM="$(cat dist/Todaymarks_aarch64.app.tar.gz.sig)"
+          SIG_X64="$(cat dist/Todaymarks_x86_64.app.tar.gz.sig)"
+          NOTES_JSON="$(python3 -c 'import json,sys; print(json.dumps(open("notes.md").read().strip()))')"
+
+          cat > dist/latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "notes": ${NOTES_JSON},
+            "pub_date": "${PUB_DATE}",
+            "platforms": {
+              "darwin-aarch64": {
+                "signature": "${SIG_ARM}",
+                "url": "${BASE}/Todaymarks_aarch64.app.tar.gz"
+              },
+              "darwin-x86_64": {
+                "signature": "${SIG_X64}",
+                "url": "${BASE}/Todaymarks_x86_64.app.tar.gz"
+              }
+            }
+          }
+          EOF
+          cat dist/latest.json
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Todaymarks ${{ github.ref_name }}
+          body_path: notes.md
+          draft: false
+          files: |
+            dist/Todaymarks_aarch64.dmg
+            dist/Todaymarks_x86_64.dmg
+            dist/Todaymarks_aarch64.app.tar.gz
+            dist/Todaymarks_x86_64.app.tar.gz
+            dist/Todaymarks_aarch64.app.tar.gz.sig
+            dist/Todaymarks_x86_64.app.tar.gz.sig
+            dist/latest.json

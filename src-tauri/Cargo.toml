@@ -1,0 +1,48 @@
+[package]
+name = "todaymarks"
+version = "0.1.0"
+description = "Todaymarks — a small, native macOS calendar for Apple Calendar."
+authors = ["Todaymarks contributors"]
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "todaymarks_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+uuid = { version = "1", features = ["v4"] }
+thiserror = "1"
+anyhow = "1"
+dirs = "5"
+
+# macOS-native Apple Calendar (EventKit) access
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", features = [
+    "NSString",
+    "NSArray",
+    "NSDate",
+    "NSError",
+    "NSURL",
+] }
+objc2-event-kit = { version = "0.3", features = [
+    "block2",
+    "EKEventStore",
+    "EKEvent",
+    "EKCalendar",
+    "EKCalendarItem",
+    "EKTypes",
+] }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Todaymarks shows your Apple Calendar events.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Todaymarks needs full calendar access to read and create events across your calendars.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Todaymarks shows a camera preview so you can check how you look before joining a meeting.</string>
+  </dict>
+</plist>

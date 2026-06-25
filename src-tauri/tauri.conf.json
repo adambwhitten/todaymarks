@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Todaymarks",
+  "version": "0.1.0",
+  "identifier": "com.todaymarks.app",
+  "build": {
+    "beforeDevCommand": "node_modules/.bin/vite",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "node_modules/.bin/tsc && node_modules/.bin/vite build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Todaymarks",
+        "width": 1180,
+        "height": 900,
+        "minWidth": 720,
+        "minHeight": 660,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "backgroundColor": "#0A0A0A"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "14.0"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/adambwhitten/todaymarks/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFBRTk1NDUzRTQ1MUM2NjAKUldSZ3hsSGtVMVRwcWxjSjIyb2ZvNSt0ajJadzZ1UXhSRlNIYjE0ZGFmK2dkdk5qL0RoOUI3a20K"
+    }
+  }
+}
