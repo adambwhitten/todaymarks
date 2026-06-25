@@ -40,7 +40,9 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "14.0"
+      "minimumSystemVersion": "14.0",
+      "signingIdentity": "-",
+      "entitlements": "entitlements.plist"
     }
   },
   "plugins": {
