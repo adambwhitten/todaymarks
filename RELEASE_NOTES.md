@@ -7,12 +7,12 @@
 
 ## What's new in v0.1.1
 
-- **Conflict warnings.** Overlapping events get a "Potential Conflict" flag. Dismiss it (with a 10-second undo if you misclick) or hit "Remind me later" to snooze it until it matters.
-- **Notifications.** Get a heads-up before a meeting starts and when you have a conflict. Set the lead time in Settings → Notifications.
-- **Menu bar & launch at login.** Keep Todaymarks running quietly in the menu bar so reminders actually reach you, and have it start automatically at login (Settings → Menu Bar).
-- **Done events.** Once an event's time has passed it dims and drops to the bottom of the day, marked "Done," so today's list always shows what's still ahead.
-- **What's New lives in Settings now**, so you can always look back at what changed.
-- Polish: cleaner spacing, search, and Settings alignment throughout.
+- Overlapping events now get a "Potential Conflict" flag. Dismiss it (with a 10-second undo if you misclick) or hit "Remind me later" to snooze it until it matters.
+- Notifications before a meeting starts and when you have a conflict. Set the lead time in Settings → Notifications.
+- Keep Todaymarks running quietly in the menu bar so reminders reach you, and start it automatically at login (Settings → Menu Bar).
+- Events that have passed now dim and drop to the bottom of the day, marked "Done," so the list always shows what's still ahead.
+- A "What's New" changelog now lives in Settings, so you can look back at what changed.
+- Cleaner spacing, search, and Settings alignment throughout.
 
 ## What's new in v0.1.0
 

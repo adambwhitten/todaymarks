@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { checkForUpdate, installUpdate } from "@/lib/updater";
+import { stripMarkdown } from "@/lib/changelog";
 import { RefreshIcon, XIcon } from "./Icons";
 
 type State =
@@ -89,7 +90,9 @@ export function UpdateBanner() {
           >
             {showNotes ? "Hide notes" : "What's new"}
           </button>
-          {showNotes && <div className="update-notes">{update.body}</div>}
+          {showNotes && (
+            <div className="update-notes">{stripMarkdown(update.body ?? "")}</div>
+          )}
         </>
       )}
       <div className="update-actions">

@@ -11,6 +11,14 @@ export interface ChangelogEntry {
   body: string;
 }
 
+/** Strip light markdown so plain-text renderers never show literal `**`, etc. */
+export function stripMarkdown(s: string): string {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1");
+}
+
 /** Parse the bundled RELEASE_NOTES.md into newest-first version entries. */
 export function parseChangelog(): ChangelogEntry[] {
   const entries: ChangelogEntry[] = [];
@@ -29,5 +37,5 @@ export function parseChangelog(): ChangelogEntry[] {
   }
   if (current) entries.push(current);
 
-  return entries.map((e) => ({ ...e, body: e.body.trim() }));
+  return entries.map((e) => ({ ...e, body: stripMarkdown(e.body.trim()) }));
 }
