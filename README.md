@@ -12,6 +12,8 @@ A small, fast calendar for your Mac that gets out of the way.
 
 <p align="center"><sub>Not sure which? &nbsp;Apple menu →  About This Mac. &nbsp;“Apple M1/M2/M3…” means Apple Silicon.</sub></p>
 
+<img style="width:100%;" src="https://i.imgur.com/BQaiq4c.png">
+
 I wanted a calendar that looked like the one in my head — a clean month grid,
 a list of today's stuff underneath, dark, quiet, no clutter — and read straight
 from the calendars I already keep in macOS. I couldn't find it, so I built it.
