@@ -1,7 +1,7 @@
 {
   "name": "todaymarks",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Todaymarks — a small, native macOS calendar for Apple Calendar.",
   "type": "module",
   "scripts": {
