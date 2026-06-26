@@ -23,6 +23,7 @@ import { EventModal } from "@/components/EventModal";
 import { CameraModal } from "@/components/CameraModal";
 import { CalendarsModal } from "@/components/CalendarsModal";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { NotificationScheduler } from "@/components/NotificationScheduler";
 
 const DEFAULT_SETTINGS: Settings = {
   hiddenCalendarIds: [],
@@ -31,6 +32,13 @@ const DEFAULT_SETTINGS: Settings = {
   timeFormat: "12h",
   defaultCalendarId: null,
   defaultDurationMinutes: 60,
+  notificationsEnabled: true,
+  reminderLeadMinutes: 5,
+  menuBarMode: true,
+  launchAtLogin: false,
+  icsGistId: null,
+  icsFeedUrl: null,
+  feedEnabled: false,
 };
 
 type ModalState =
@@ -200,6 +208,11 @@ export default function App() {
   return (
     <div className="app">
       <UpdateBanner />
+      <NotificationScheduler
+        enabled={settings.notificationsEnabled}
+        leadMinutes={settings.reminderLeadMinutes}
+        timeFormat={settings.timeFormat}
+      />
       <div className="titlebar-drag" data-tauri-drag-region />
       <div className="app-body">
         <Header

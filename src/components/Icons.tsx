@@ -107,6 +107,14 @@ export const NoteIcon = ({ size = 16, className }: IconProps) => (
   </svg>
 );
 
+export const AlertIcon = ({ size = 13, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M10.3 3.2 1.8 17.5A2 2 0 0 0 3.5 20.5h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0Z" />
+    <path d="M12 9v4" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
 export const LinkIcon = ({ size = 16, className }: IconProps) => (
   <svg {...base(size)} className={className}>
     <path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1.5 1.5" />

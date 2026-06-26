@@ -20,6 +20,58 @@ pub fn save_settings(state: State<'_, AppState>, settings: Settings) -> Result<S
 }
 
 #[tauri::command]
+pub async fn publish_ics_feed(state: State<'_, AppState>) -> Result<Settings, String> {
+    let db_path = state.db_path.clone();
+    let existing = state.get_settings().ics_gist_id.clone();
+
+    let now = chrono::Utc::now().timestamp_millis();
+    let day = 24 * 60 * 60 * 1000i64;
+    let start = now - 180 * day;
+    let end = now + 365 * day;
+
+    let (id, login) = tokio::task::spawn_blocking(move || {
+        let events = local::list_events(&db_path, start, end).map_err(|e| e.to_string())?;
+        crate::feed::publish(&events, existing.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let mut s = state.get_settings();
+    s.ics_feed_url = Some(crate::feed::raw_url(&login, &id));
+    s.ics_gist_id = Some(id);
+    state.save_settings(s).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_ics_feed(state: State<'_, AppState>) -> Result<Settings, String> {
+    if let Some(id) = state.get_settings().ics_gist_id.clone() {
+        let _ = tokio::task::spawn_blocking(move || crate::feed::delete(&id)).await;
+    }
+    let mut s = state.get_settings();
+    s.ics_gist_id = None;
+    s.ics_feed_url = None;
+    state.save_settings(s).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_launch_at_login(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<Settings, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    let mgr = app.autolaunch();
+    if enabled {
+        mgr.enable().map_err(|e| e.to_string())?;
+    } else {
+        mgr.disable().map_err(|e| e.to_string())?;
+    }
+    let mut s = state.get_settings();
+    s.launch_at_login = enabled;
+    state.save_settings(s).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn set_calendar_color(
     state: State<'_, AppState>,
     calendar_id: String,
@@ -178,16 +230,37 @@ pub async fn update_apple_event(id: String, input: EventInput) -> Result<(), Str
         .map_err(|e| e.to_string())?
 }
 
+/// If a feed gist is published, regenerate + push it in the background so the
+/// published calendar stays in sync with local events.
+fn republish_feed_if_active(state: &AppState) {
+    let settings = state.get_settings();
+    let Some(gist_id) = settings.ics_gist_id else {
+        return;
+    };
+    let db_path = state.db_path.clone();
+    tokio::task::spawn_blocking(move || {
+        let now = chrono::Utc::now().timestamp_millis();
+        let day = 24 * 60 * 60 * 1000i64;
+        if let Ok(events) = local::list_events(&db_path, now - 180 * day, now + 365 * day) {
+            let _ = crate::feed::publish(&events, Some(&gist_id));
+        }
+    });
+}
+
 #[tauri::command]
 pub async fn save_event(
     state: State<'_, AppState>,
     input: EventInput,
 ) -> Result<CalendarEvent, String> {
     let db_path = state.db_path.clone();
-    tokio::task::spawn_blocking(move || local::upsert_event(&db_path, input))
+    let result = tokio::task::spawn_blocking(move || local::upsert_event(&db_path, input))
         .await
         .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string());
+    if result.is_ok() {
+        republish_feed_if_active(&state);
+    }
+    result
 }
 
 #[tauri::command]
@@ -201,8 +274,12 @@ pub async fn delete_event(state: State<'_, AppState>, id: String) -> Result<(), 
     }
     let db_path = state.db_path.clone();
     let raw = id.strip_prefix("local:").unwrap_or(&id).to_string();
-    tokio::task::spawn_blocking(move || local::delete_event(&db_path, &raw))
+    let result = tokio::task::spawn_blocking(move || local::delete_event(&db_path, &raw))
         .await
         .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string());
+    if result.is_ok() {
+        republish_feed_if_active(&state);
+    }
+    result
 }

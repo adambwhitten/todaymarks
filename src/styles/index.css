@@ -538,11 +538,105 @@ button {
   padding: 18px 4px;
 }
 
+/* Past ("Done") events — dimmed, sunk to the bottom. */
+.agenda-row.is-past {
+  opacity: 0.45;
+}
+.agenda-row.is-past:hover {
+  opacity: 0.7;
+}
+.done-pill {
+  align-self: center;
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--panel-active);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+
+/* Potential-conflict callout for overlapping events */
+.agenda-row.has-conflict {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(245, 158, 11, 0.05);
+}
+.conflict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 3px 4px 3px 9px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f8b34d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.conflict-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  border-radius: 50%;
+  padding: 0;
+}
+.conflict-action:hover {
+  opacity: 1;
+  background: rgba(245, 158, 11, 0.22);
+}
+
+/* Snooze ("remind me later") menu */
+.snooze-menu {
+  position: fixed;
+  z-index: 200;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  animation: pop 0.12s ease;
+}
+.snooze-menu-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 4px 8px 6px;
+}
+.snooze-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 7px;
+}
+.snooze-item:hover {
+  background: var(--panel-hover);
+}
+
 .agenda-footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 2px 2px;
+  padding: 12px 2px 16px;
   flex: 0 0 auto;
 }
 .new-event-btn {
@@ -740,10 +834,13 @@ button {
   padding: 11px 0 4px;
 }
 
-/* Right-aligned select used in settings rows */
+/* Right-aligned select used in settings rows. WebKit ignores text-align on the
+   selected value, so we flip direction to pin it to the right edge. */
 .efield-select.is-right {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 62%;
   text-align: right;
+  direction: rtl;
   color: var(--text-dim);
   padding-right: 16px;
 }
@@ -1016,6 +1113,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--border-soft);
 }
@@ -1030,6 +1128,10 @@ button {
   gap: 16px;
   max-height: 64vh;
   overflow-y: auto;
+}
+/* Don't let long content squash rows — scroll instead. */
+.modal-body > * {
+  flex-shrink: 0;
 }
 .modal-footer {
   display: flex;
@@ -1345,6 +1447,35 @@ select.input:focus {
   padding-top: 4px;
 }
 
+.efield-chevron {
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+/* What's New changelog */
+.changelog {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.changelog-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.changelog-version {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.changelog-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+}
+
 .banner {
   display: flex;
   align-items: center;
@@ -1481,6 +1612,30 @@ select.input:focus {
   background: var(--accent);
   border-radius: 999px;
   transition: width 0.2s ease;
+}
+.update-progress-bar.countdown {
+  width: 100%;
+  animation: countdown linear forwards;
+}
+@keyframes countdown {
+  to {
+    width: 0%;
+  }
+}
+
+.btn-undo {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.btn-undo:hover {
+  background: var(--accent-soft);
 }
 
 .spinner {

@@ -24,10 +24,38 @@ pub struct Settings {
     /// Default duration (minutes) for new timed events.
     #[serde(default = "default_duration")]
     pub default_duration_minutes: u32,
+    /// Fire native notifications for upcoming meetings + conflicts while running.
+    #[serde(default = "default_true")]
+    pub notifications_enabled: bool,
+    /// Minutes before an event starts to notify (0 = at start time).
+    #[serde(default = "default_lead")]
+    pub reminder_lead_minutes: u32,
+    /// Keep running in the menu bar when the window is closed.
+    #[serde(default = "default_true")]
+    pub menu_bar_mode: bool,
+    /// Start Todaymarks automatically at login.
+    #[serde(default)]
+    pub launch_at_login: bool,
+    /// Gist id backing the published ICS feed of the local calendar.
+    #[serde(default)]
+    pub ics_gist_id: Option<String>,
+    /// Public raw URL of the published ICS feed (for Cal.com etc.).
+    #[serde(default)]
+    pub ics_feed_url: Option<String>,
+    /// Show the (experimental) "Calendar Feed" publishing UI. Off by default —
+    /// not shipped to users yet.
+    #[serde(default)]
+    pub feed_enabled: bool,
 }
 
 fn default_duration() -> u32 {
     60
+}
+fn default_true() -> bool {
+    true
+}
+fn default_lead() -> u32 {
+    5
 }
 
 impl Default for Settings {
@@ -39,6 +67,13 @@ impl Default for Settings {
             time_format: "12h".to_string(),
             default_calendar_id: None,
             default_duration_minutes: 60,
+            notifications_enabled: true,
+            reminder_lead_minutes: 5,
+            menu_bar_mode: true,
+            launch_at_login: false,
+            ics_gist_id: None,
+            ics_feed_url: None,
+            feed_enabled: false,
         }
     }
 }

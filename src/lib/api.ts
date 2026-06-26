@@ -14,6 +14,10 @@ export const api = {
     invoke<Settings>("save_settings", { settings }),
   setCalendarColor: (calendarId: string, color: string | null) =>
     invoke<Settings>("set_calendar_color", { calendarId, color }),
+  setLaunchAtLogin: (enabled: boolean) =>
+    invoke<Settings>("set_launch_at_login", { enabled }),
+  publishIcsFeed: () => invoke<Settings>("publish_ics_feed"),
+  deleteIcsFeed: () => invoke<Settings>("delete_ics_feed"),
 
   appleAuthStatus: () => invoke<AppleAuthStatus>("apple_authorization_status"),
   requestAppleAccess: () => invoke<boolean>("request_apple_access"),

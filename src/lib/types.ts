@@ -46,6 +46,13 @@ export interface Settings {
   timeFormat: "12h" | "24h";
   defaultCalendarId: string | null;
   defaultDurationMinutes: number;
+  notificationsEnabled: boolean;
+  reminderLeadMinutes: number;
+  menuBarMode: boolean;
+  launchAtLogin: boolean;
+  icsGistId: string | null;
+  icsFeedUrl: string | null;
+  feedEnabled: boolean;
 }
 
 export type AppleAuthStatus =

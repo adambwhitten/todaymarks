@@ -35,7 +35,7 @@ export function SearchModal({ events, onClose, onPick }: SearchModalProps) {
             value={query}
             autoFocus
             onChange={(e) => setQuery(e.target.value)}
-            style={{ border: "none", background: "transparent", fontSize: 16, padding: 0 }}
+            style={{ fontSize: 16, padding: "11px 14px", flex: 1, minWidth: 0 }}
           />
           <button className="icon-btn" onClick={onClose}>
             <XIcon />
