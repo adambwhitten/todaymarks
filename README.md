@@ -4,6 +4,14 @@
 
 A small, fast calendar for your Mac that gets out of the way.
 
+<p align="center">
+  <a href="https://github.com/adambwhitten/todaymarks/releases/latest/download/Todaymarks_aarch64.dmg"><img alt="Download for Apple Silicon" src="https://img.shields.io/badge/Download-Apple%20Silicon-0A84FF?style=for-the-badge&logo=apple&logoColor=white"></a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/adambwhitten/todaymarks/releases/latest/download/Todaymarks_x86_64.dmg"><img alt="Download for Intel" src="https://img.shields.io/badge/Download-Intel-444444?style=for-the-badge&logo=apple&logoColor=white"></a>
+</p>
+
+<p align="center"><sub>Not sure which? &nbsp;Apple menu →  About This Mac. &nbsp;“Apple M1/M2/M3…” means Apple Silicon.</sub></p>
+
 I wanted a calendar that looked like the one in my head — a clean month grid,
 a list of today's stuff underneath, dark, quiet, no clutter — and read straight
 from the calendars I already keep in macOS. I couldn't find it, so I built it.
@@ -21,24 +29,32 @@ servers and no telemetry.
 
 ## Install
 
-One line in Terminal grabs the latest release, drops it in `/Applications`, and
-launches it:
+**Download** the `.dmg` for your Mac (buttons above), open it, and drag
+**Todaymarks** to Applications.
+
+### First launch
+
+Todaymarks is free and open-source, so it isn't notarized by Apple (that's a
+$99/yr developer account). Because of that, the *first* time you open it macOS
+will say it "can't verify the developer." That's expected — here's the one-time
+approval:
+
+1. Double-click **Todaymarks**, read the warning, and click **Done**.
+2. Open **System Settings → Privacy & Security**, scroll down, and click
+   **Open Anyway** next to Todaymarks.
+3. Confirm once. After that it opens normally, forever.
+
+**Prefer zero prompts?** This one line downloads it, drops it in `/Applications`,
+and clears the quarantine flag so Gatekeeper never asks — nothing sketchy, just
+`xattr -dr com.apple.quarantine`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/adambwhitten/todaymarks/main/scripts/install.sh | bash
 ```
 
-Todaymarks isn't notarized by Apple (that costs $99/yr; this is free and
-open-source), so a plain download would trip Gatekeeper's "unidentified
-developer" warning. The installer sidesteps that by clearing the quarantine
-flag for you — nothing sketchy, just `xattr -dr com.apple.quarantine`. Prefer to
-do it by hand? Download the `.dmg` from
-[Releases](https://github.com/adambwhitten/todaymarks/releases/latest), drag the app to
-Applications, then run `xattr -dr com.apple.quarantine /Applications/Todaymarks.app`.
-
-After that you never touch the installer again — Todaymarks **updates itself**.
-When a new version ships it shows an "Update available" card; one click downloads
-it, verifies the signature, and restarts.
+Either way you only do this once — Todaymarks **updates itself** after that. When
+a new version ships it shows an "Update available" card; one click downloads it,
+verifies the signature, and restarts.
 
 ## What it does
 
