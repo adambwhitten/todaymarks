@@ -39,6 +39,14 @@ the whole thing:
 Default to committing straight to `main` (solo project). If Adam asks for a PR,
 branch → PR → let CI pass → merge → then tag.
 
+**Commit identity (don't get this wrong).** Author every commit as
+`Adam Whitten <3663553+adambwhitten@users.noreply.github.com>` so GitHub credits
+Adam's `adambwhitten` account. This is GitHub's privacy noreply address — do NOT
+use `helptacoclout@gmail.com` (his Claude email; it's unlinked and won't show as a
+contributor). The repo's `.git/config` is already set to this; in a fresh clone,
+set it first:
+`git config user.name "Adam Whitten" && git config user.email "3663553+adambwhitten@users.noreply.github.com"`.
+
 ## Signing model (don't break this)
 
 - **Public releases** are signed ad-hoc with hardened runtime + `src-tauri/entitlements.plist`
