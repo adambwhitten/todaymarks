@@ -1,6 +1,96 @@
 import type { CalendarEvent } from "./types";
 import { DAY_MS, startOfDay } from "./date";
 
+const HOUR_MS = 60 * 60 * 1000;
+
+/** A timed event positioned within a single day column of the time grid. */
+export interface TimedBlock {
+  event: CalendarEvent;
+  /** Pixel offset from the top of the day (midnight). */
+  top: number;
+  /** Pixel height of the block. */
+  height: number;
+  /** Horizontal position within the column, 0..1. */
+  left: number;
+  /** Fraction of the column width, 0..1. */
+  width: number;
+}
+
+/** True for events that belong in the all-day band (all-day or multi-day). */
+export function isAllDayBlock(ev: CalendarEvent): boolean {
+  return ev.allDay || isBarEvent(ev);
+}
+
+/**
+ * Lay out one day's timed events into positioned blocks. Overlapping events are
+ * packed side by side: events are grouped into overlap clusters and each cluster
+ * is split into the minimum number of columns so nothing visually collides.
+ */
+export function layoutDayColumn(
+  events: CalendarEvent[],
+  dayStartMs: number,
+  hourHeight: number,
+  minBlockPx = 18,
+): TimedBlock[] {
+  const dayEndMs = dayStartMs + DAY_MS;
+  const timed = events
+    .filter((e) => !isAllDayBlock(e) && e.start < dayEndMs && e.end > dayStartMs)
+    .sort((a, b) => a.start - b.start || b.end - a.end);
+
+  // Position each block vertically (clamped to the day) and note its span.
+  const items = timed.map((event) => {
+    const s = Math.max(event.start, dayStartMs);
+    const e = Math.min(event.end, dayEndMs);
+    return {
+      event,
+      spanStart: s,
+      spanEnd: e,
+      top: ((s - dayStartMs) / HOUR_MS) * hourHeight,
+      height: Math.max(((e - s) / HOUR_MS) * hourHeight, minBlockPx),
+      col: 0,
+      cols: 1,
+    };
+  });
+
+  // Walk clusters of transitively-overlapping events; assign columns greedily.
+  let i = 0;
+  while (i < items.length) {
+    let clusterEnd = items[i].spanEnd;
+    let j = i + 1;
+    while (j < items.length && items[j].spanStart < clusterEnd) {
+      clusterEnd = Math.max(clusterEnd, items[j].spanEnd);
+      j++;
+    }
+    const cluster = items.slice(i, j);
+    const colEnds: number[] = [];
+    for (const it of cluster) {
+      let placed = false;
+      for (let c = 0; c < colEnds.length; c++) {
+        if (colEnds[c] <= it.spanStart) {
+          it.col = c;
+          colEnds[c] = it.spanEnd;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        it.col = colEnds.length;
+        colEnds.push(it.spanEnd);
+      }
+    }
+    for (const it of cluster) it.cols = colEnds.length;
+    i = j;
+  }
+
+  return items.map((it) => ({
+    event: it.event,
+    top: it.top,
+    height: it.height,
+    left: it.col / it.cols,
+    width: 1 / it.cols,
+  }));
+}
+
 /** A multi-day / all-day event positioned within one week row. */
 export interface BarSegment {
   event: CalendarEvent;
@@ -28,9 +118,11 @@ function intersectsDay(ev: CalendarEvent, dayStart: number): boolean {
   return ev.start < dayEnd && ev.end > dayStart;
 }
 
-/** A bar event is anything all-day, or anything spanning more than one day. */
+/**
+ * A month-grid bar is only for events that span more than one day; single-day
+ * all-day events render as ordinary minimalist chips (same as timed events).
+ */
 function isBarEvent(ev: CalendarEvent): boolean {
-  if (ev.allDay) return true;
   const s = startOfDay(new Date(ev.start)).getTime();
   const e = startOfDay(new Date(ev.end - 1)).getTime();
   return e > s;

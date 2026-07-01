@@ -125,6 +125,12 @@ button {
 
 .header-title {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header-title-main {
+  display: flex;
   align-items: baseline;
   gap: 14px;
 }
@@ -143,6 +149,40 @@ button {
   font-weight: 300;
   color: var(--text-faint);
   letter-spacing: 0.02em;
+}
+
+/* Day / Week / Month switcher — small text labels beside the year. */
+.view-switch {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-left: 8px;
+  -webkit-app-region: no-drag;
+}
+.view-switch-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.view-switch-btn:hover {
+  color: var(--text-dim);
+}
+.view-switch-btn.is-active {
+  color: var(--text);
+  background: var(--panel-active);
+}
+
+.header-context {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
 }
 
 .header-actions {
@@ -204,21 +244,26 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  /* The calendar never scrolls — all six weeks always fit. */
-  overflow: hidden;
+  /* Weeks fill the calendar and share its height equally. If the calendar is
+     squeezed (e.g. the agenda is dragged up) past the point where every week
+     stays legible, the grid scrolls instead of clipping rows mid-line. */
+  overflow-y: auto;
   border-top: 1px solid var(--border-soft);
 }
 
 /* --------------------------------------------------------------- Week rows */
 
 .week {
-  /* Rows share the calendar height equally and fill it exactly (no scroll).
-     The number of events shown per cell adapts to the row height. */
+  /* Rows share the calendar height equally and fill it when there's room; the
+     number of events shown per cell adapts to the row height. They won't shrink
+     below min-height — past that the .weeks container scrolls (see above) so a
+     row never clips its day number or an event chip mid-line. */
   flex: 1 1 0;
+  min-height: 92px;
   display: grid;
   grid-template-rows: auto auto 1fr;
   border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 5px;
+  padding-bottom: 7px;
   position: relative;
 }
 
@@ -250,7 +295,7 @@ button {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-dim);
-  padding: 5px 8px 3px;
+  padding: 7px 10px 4px;
   text-align: left;
 }
 .day-number.is-outside {
@@ -285,30 +330,40 @@ button {
 }
 
 .bar {
-  height: 16px;
+  height: 17px;
   display: flex;
   align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 500;
   color: var(--text);
-  background: var(--bar-tint);
-  padding: 0 7px;
+  background: rgba(255, 255, 255, 0.09);
+  padding: 0 8px;
   margin: 0 1px;
   border-radius: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 2px solid var(--bar-accent, #6366f1);
   cursor: pointer;
 }
+.bar-tick {
+  flex: 0 0 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--bar-accent, #6366f1);
+}
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .bar.is-start {
-  border-top-left-radius: 5px;
-  border-bottom-left-radius: 5px;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
   margin-left: 3px;
 }
 .bar.is-end {
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
   margin-right: 3px;
 }
 .bar.is-continued {
@@ -329,8 +384,8 @@ button {
 .day-singles {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 2px 4px 0;
+  gap: 3px;
+  padding: 3px 8px 0;
   min-width: 0;
   overflow: hidden;
   align-content: start;
@@ -339,12 +394,13 @@ button {
 .chip {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
   font-weight: 500;
   color: var(--text);
-  padding: 1px 4px 1px 0;
-  border-radius: 4px;
+  padding: 2px 5px 2px 4px;
+  margin: 0 -4px;
+  border-radius: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -374,11 +430,336 @@ button {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-faint);
-  padding: 1px 4px;
+  padding: 2px 5px;
   cursor: pointer;
 }
 .day-more:hover {
   color: var(--text-dim);
+}
+
+/* "+N" peek popover — lists the day's full set of events. */
+.day-peek {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+}
+.day-peek-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 0 4px;
+}
+.day-peek-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.day-peek-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.day-peek-row:hover {
+  background: var(--panel-hover);
+}
+.day-peek-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.day-peek-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------- Time grid (day / week) */
+
+.timegrid {
+  --tg-gutter: 60px;
+  --tg-scrollbar: 10px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Weekday/date header row (week view) — stays fixed above the scroll. */
+.tg-daterow {
+  display: flex;
+  flex: 0 0 auto;
+  padding-right: var(--tg-scrollbar);
+  border-bottom: 1px solid var(--border-soft);
+}
+.tg-corner {
+  flex: 0 0 var(--tg-gutter);
+}
+.tg-dayhead {
+  flex: 1 1 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 8px 10px;
+  border-left: 1px solid var(--border-soft);
+  cursor: pointer;
+}
+.tg-dayname {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tg-dayhead.is-weekend .tg-dayname {
+  color: #9a5a5a;
+}
+.tg-daynum {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.tg-daynum.is-today {
+  background: #ffffff;
+  color: #0a0a0a;
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* All-day band — fixed above the scroll, aligned to the columns. */
+.tg-alldayrow {
+  display: flex;
+  flex: 0 0 auto;
+  padding-right: var(--tg-scrollbar);
+  border-bottom: 1px solid var(--border-soft);
+  max-height: 84px;
+  overflow-y: auto;
+}
+.tg-allday-label {
+  flex: 0 0 var(--tg-gutter);
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: right;
+}
+.tg-allday-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-left: 1px solid var(--border-soft);
+  min-width: 0;
+}
+.tg-allday-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 2px 6px;
+  border-radius: 5px;
+  min-width: 0;
+  cursor: pointer;
+}
+.tg-allday-chip:hover {
+  background: var(--panel-hover);
+}
+
+/* Day view: all-day events live in a right-hand column, shown only when present. */
+.tg-day-split {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+.tg-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.tg-allday-side {
+  flex: 0 0 240px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border-soft);
+}
+.tg-allday-side-head {
+  padding: 10px 14px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tg-allday-side-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+}
+.tg-allday-side .tg-allday-chip {
+  padding: 5px 8px;
+}
+
+.tg-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-gutter: stable;
+}
+
+.tg-body {
+  position: relative;
+  display: flex;
+}
+
+.tg-gutter {
+  position: relative;
+  flex: 0 0 var(--tg-gutter);
+}
+.tg-hourlabel {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.tg-nowlabel {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #ef4444;
+  white-space: nowrap;
+}
+
+.tg-cols {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+}
+.tg-hline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border-soft);
+  pointer-events: none;
+}
+.tg-col {
+  flex: 1 1 0;
+  position: relative;
+  border-left: 1px solid var(--border-soft);
+  min-width: 0;
+}
+.tg-col.is-weekend {
+  background: rgba(255, 255, 255, 0.012);
+}
+
+/* Current-day column highlight (week view) — frosted glass down the whole column. */
+.tg-dayhead.is-today,
+.tg-allday-col.is-today,
+.tg-col.is-today {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tg-event {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 4px;
+  background: transparent;
+  padding: 3px 6px;
+  cursor: pointer;
+  display: flex;
+  gap: 7px;
+  z-index: 1;
+}
+.tg-event:hover {
+  background: var(--panel-hover);
+}
+.tg-event-tick {
+  flex: 0 0 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--accent, #6366f1);
+}
+.tg-event-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.tg-event.is-compact .tg-event-body {
+  justify-content: center;
+}
+.tg-event-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tg-event-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Current-time indicator. */
+.tg-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #ef4444;
+  z-index: 2;
+  pointer-events: none;
+}
+.tg-now-dot {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
 }
 
 /* ---------------------------------------------------------------- Agenda */

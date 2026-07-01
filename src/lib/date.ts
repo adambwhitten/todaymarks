@@ -20,6 +20,23 @@ export function addMonths(d: Date, months: number): Date {
   return n;
 }
 
+export function addWeeks(d: Date, weeks: number): Date {
+  return addDays(d, weeks * 7);
+}
+
+/** Midnight of the week containing `d`, per `weekStart` (0 = Sun, 1 = Mon). */
+export function startOfWeek(d: Date, weekStart: number): Date {
+  const n = startOfDay(d);
+  const offset = (n.getDay() - weekStart + 7) % 7;
+  return addDays(n, -offset);
+}
+
+/** The 7 days of the week containing `d`. */
+export function weekDays(d: Date, weekStart: number): Date[] {
+  const start = startOfWeek(d, weekStart);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -37,14 +54,25 @@ export function isToday(d: Date): boolean {
 }
 
 /**
- * Build the 6-week grid (42 cells) that contains the given month, starting on
- * `weekStart` (0 = Sunday, 1 = Monday).
+ * Build the month grid, starting on `weekStart` (0 = Sunday, 1 = Monday).
+ *
+ * Only the weeks that actually contain a day of the month are returned (4, 5,
+ * or 6 rows) — a trailing week that would be entirely next-month is dropped.
+ * The final row can still spill a few greyed-out next-month days to fill it out
+ * (e.g. `…31, 1`), but a full extra week of next month never shows.
  */
 export function monthGrid(viewDate: Date, weekStart: number): Date[] {
   const first = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
   const offset = (first.getDay() - weekStart + 7) % 7;
   const gridStart = addDays(first, -offset);
-  return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  const daysInMonth = new Date(
+    viewDate.getFullYear(),
+    viewDate.getMonth() + 1,
+    0,
+  ).getDate();
+  // Leading (prev-month) cells + the month's own days, rounded up to whole weeks.
+  const weeks = Math.ceil((offset + daysInMonth) / 7);
+  return Array.from({ length: weeks * 7 }, (_, i) => addDays(gridStart, i));
 }
 
 export function weekdayLabels(weekStart: number): string[] {
@@ -80,6 +108,28 @@ export function formatTime(ms: number, format: "12h" | "24h"): string {
   if (h === 0) h = 12;
   const mm = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
   return `${h}${mm} ${ampm}`;
+}
+
+/** An hour-of-day label for the time-grid gutter, e.g. "9 AM" / "12 PM" / "13:00". */
+export function formatHourLabel(hour: number, format: "12h" | "24h"): string {
+  if (format === "24h") return `${String(hour).padStart(2, "0")}:00`;
+  const ampm = hour >= 12 ? "PM" : "AM";
+  let h = hour % 12;
+  if (h === 0) h = 12;
+  return `${h} ${ampm}`;
+}
+
+/** Compact date range for a week, e.g. "Jul 6 – 12, 2026" or "Jun 29 – Jul 5, 2026". */
+export function formatWeekRange(days: Date[]): string {
+  const a = days[0];
+  const b = days[days.length - 1];
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  const left = a.toLocaleDateString(undefined, opts);
+  const right =
+    a.getMonth() === b.getMonth()
+      ? String(b.getDate())
+      : b.toLocaleDateString(undefined, opts);
+  return `${left} – ${right}, ${b.getFullYear()}`;
 }
 
 export function formatDayHeading(d: Date): string {

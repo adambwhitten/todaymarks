@@ -6,16 +6,23 @@ import type {
   CalendarInfo,
   EventInput,
   Settings,
+  ViewMode,
 } from "@/lib/types";
 import {
+  addDays,
   addMonths,
+  addWeeks,
+  formatDayHeading,
+  formatWeekRange,
   monthGrid,
   startOfDay,
+  weekDays,
   weekdayLabels,
   DAY_MS,
 } from "@/lib/date";
 import { Header } from "@/components/Header";
 import { WeekRow } from "@/components/WeekRow";
+import { TimeGrid } from "@/components/TimeGrid";
 import { AgendaPanel } from "@/components/AgendaPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { SearchModal } from "@/components/SearchModal";
@@ -52,6 +59,7 @@ type ModalState =
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [view, setView] = useState<ViewMode>("month");
   const [viewDate, setViewDate] = useState(() => startOfDay(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -64,16 +72,55 @@ export default function App() {
   const weeks = useMemo(() => {
     const grid = monthGrid(viewDate, settings.weekStart);
     const rows: Date[][] = [];
-    for (let i = 0; i < 6; i++) rows.push(grid.slice(i * 7, i * 7 + 7));
+    for (let i = 0; i < grid.length / 7; i++)
+      rows.push(grid.slice(i * 7, i * 7 + 7));
     return rows;
   }, [viewDate, settings.weekStart]);
 
+  // The days shown in the time grid: a full week or a single day.
+  const gridDays = useMemo(() => {
+    if (view === "week") return weekDays(viewDate, settings.weekStart);
+    if (view === "day") return [startOfDay(viewDate)];
+    return [];
+  }, [view, viewDate, settings.weekStart]);
+
   const range = useMemo(() => {
-    const grid = monthGrid(viewDate, settings.weekStart);
-    const start = grid[0].getTime();
-    const end = grid[grid.length - 1].getTime() + DAY_MS;
-    return { start, end };
-  }, [viewDate, settings.weekStart]);
+    if (view === "month") {
+      const grid = monthGrid(viewDate, settings.weekStart);
+      return {
+        start: grid[0].getTime(),
+        end: grid[grid.length - 1].getTime() + DAY_MS,
+      };
+    }
+    return {
+      start: gridDays[0].getTime(),
+      end: gridDays[gridDays.length - 1].getTime() + DAY_MS,
+    };
+  }, [view, viewDate, settings.weekStart, gridDays]);
+
+  const contextLabel =
+    view === "week"
+      ? formatWeekRange(gridDays)
+      : view === "day"
+        ? formatDayHeading(viewDate)
+        : undefined;
+
+  // The agenda panel follows the viewed day in Day view, else the selection.
+  const agendaDate = view === "day" ? viewDate : selectedDate;
+
+  // Prev/Next move by the current view's unit.
+  const step = useCallback(
+    (dir: number) => {
+      setViewDate((d) =>
+        view === "month"
+          ? addMonths(d, dir)
+          : view === "week"
+            ? addWeeks(d, dir)
+            : addDays(d, dir),
+      );
+    },
+    [view],
+  );
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -149,20 +196,21 @@ export default function App() {
         e.preventDefault();
         setModal({ kind: "search" });
       } else if (e.key === "ArrowLeft") {
-        setViewDate((d) => addMonths(d, -1));
+        step(-1);
       } else if (e.key === "ArrowRight") {
-        setViewDate((d) => addMonths(d, 1));
+        step(1);
       } else if (e.key.toLowerCase() === "t") {
         const today = startOfDay(new Date());
         setViewDate(today);
         setSelectedDate(today);
       } else if (e.key.toLowerCase() === "n") {
-        setModal({ kind: "event", event: null, date: selectedDate.getTime() });
+        const day = view === "day" ? viewDate : selectedDate;
+        setModal({ kind: "event", event: null, date: day.getTime() });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [modal.kind, selectedDate]);
+  }, [modal.kind, selectedDate, step, view, viewDate]);
 
   const handleSaveEvent = useCallback(
     async (input: EventInput, calendarId: string) => {
@@ -217,9 +265,12 @@ export default function App() {
       <div className="app-body">
         <Header
           viewDate={viewDate}
+          view={view}
+          contextLabel={contextLabel}
           refreshing={loading}
-          onPrev={() => setViewDate((d) => addMonths(d, -1))}
-          onNext={() => setViewDate((d) => addMonths(d, 1))}
+          onViewChange={setView}
+          onPrev={() => step(-1)}
+          onNext={() => step(1)}
           onRefresh={handleRefresh}
           onSearch={() => setModal({ kind: "search" })}
           onCamera={() => setModal({ kind: "camera" })}
@@ -230,39 +281,67 @@ export default function App() {
           }}
         />
 
-        <div className="calendar">
-          <div className="weekday-row">
-            {weekdayLabels(settings.weekStart).map((label, i) => (
-              <div key={i} className="weekday-cell">
-                {label}
-              </div>
-            ))}
-          </div>
+        <div className="calendar" style={{ position: "relative" }}>
+          {loading && (
+            <div className="loading-veil">
+              <div className="spinner" />
+            </div>
+          )}
 
-          <div className="weeks" style={{ position: "relative" }}>
-            {loading && (
-              <div className="loading-veil">
-                <div className="spinner" />
+          {view === "month" ? (
+            <>
+              <div className="weekday-row">
+                {weekdayLabels(settings.weekStart).map((label, i) => (
+                  <div key={i} className="weekday-cell">
+                    {label}
+                  </div>
+                ))}
               </div>
-            )}
-            {weeks.map((week, i) => (
-              <WeekRow
-                key={i}
-                weekDays={week}
-                viewDate={viewDate}
-                selectedDate={selectedDate}
-                events={events}
-                onSelectDay={setSelectedDate}
-                onOpenEvent={(event) =>
-                  setModal({ kind: "event", event, date: event.start })
-                }
-              />
-            ))}
-          </div>
+
+              <div className="weeks">
+                {weeks.map((week, i) => (
+                  <WeekRow
+                    key={i}
+                    weekDays={week}
+                    viewDate={viewDate}
+                    selectedDate={selectedDate}
+                    events={events}
+                    timeFormat={settings.timeFormat}
+                    onSelectDay={setSelectedDate}
+                    onOpenEvent={(event) =>
+                      setModal({ kind: "event", event, date: event.start })
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <TimeGrid
+              days={gridDays}
+              events={events}
+              settings={settings}
+              showDayHeaders={view === "week"}
+              onOpenEvent={(event) =>
+                setModal({ kind: "event", event, date: event.start })
+              }
+              onCreate={(day) => {
+                setSelectedDate(startOfDay(day));
+                setModal({
+                  kind: "event",
+                  event: null,
+                  date: startOfDay(day).getTime(),
+                });
+              }}
+              onOpenDay={(day) => {
+                setViewDate(startOfDay(day));
+                setView("day");
+              }}
+            />
+          )}
         </div>
 
         <AgendaPanel
-          selectedDate={selectedDate}
+          selectedDate={agendaDate}
           events={events}
           settings={settings}
           height={agendaHeight}
@@ -271,7 +350,11 @@ export default function App() {
             setModal({ kind: "event", event, date: event.start })
           }
           onNewEvent={() =>
-            setModal({ kind: "event", event: null, date: selectedDate.getTime() })
+            setModal({
+              kind: "event",
+              event: null,
+              date: agendaDate.getTime(),
+            })
           }
           onJoin={handleJoin}
         />

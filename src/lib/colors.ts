@@ -12,3 +12,13 @@ export const PALETTE = [
   "#84cc16", // lime
   "#ffffff", // white
 ];
+
+/** Blend a hex color toward transparency for translucent fills (tints, bars). */
+export function tint(hex: string, alpha: number): string {
+  const m = hex.replace("#", "");
+  if (m.length !== 6) return `rgba(99, 102, 241, ${alpha})`;
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

@@ -1,5 +1,8 @@
 export type EventSource = "apple" | "local";
 
+/** Which calendar layout is shown. */
+export type ViewMode = "month" | "week" | "day";
+
 export interface CalendarEvent {
   id: string;
   source: EventSource;

@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent } from "@/lib/types";
-import { isSameDay, isSameMonth, isToday } from "@/lib/date";
+import { DAY_MS, isSameDay, isSameMonth, isToday } from "@/lib/date";
 import { layoutWeek } from "@/lib/layout";
+import { DayPeekPopover } from "./DayPeekPopover";
 
 /** Approximate height of one chip / "+N" line, in px. */
-const LINE_HEIGHT = 17;
+const LINE_HEIGHT = 20;
 
 interface WeekRowProps {
   weekDays: Date[];
   viewDate: Date;
   selectedDate: Date;
   events: CalendarEvent[];
+  timeFormat: "12h" | "24h";
   onSelectDay: (day: Date) => void;
   onOpenEvent: (event: CalendarEvent) => void;
 }
@@ -20,11 +22,28 @@ export function WeekRow({
   viewDate,
   selectedDate,
   events,
+  timeFormat,
   onSelectDay,
   onOpenEvent,
 }: WeekRowProps) {
   const layout = useMemo(() => layoutWeek(weekDays, events), [weekDays, events]);
   const selectedCol = weekDays.findIndex((d) => isSameDay(d, selectedDate));
+
+  // "+N" peek popover: which day's list is open, and where to anchor it.
+  const [peek, setPeek] = useState<{ day: Date; x: number; y: number } | null>(
+    null,
+  );
+  const peekEvents = useMemo(() => {
+    if (!peek) return [];
+    const s = peek.day.getTime();
+    const e = s + DAY_MS;
+    return events
+      .filter((ev) => ev.start < e && ev.end > s)
+      .sort((a, b) => {
+        if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+        return a.start - b.start;
+      });
+  }, [peek, events]);
 
   // Measure the per-day event band so we show exactly as many chips as fit and
   // overflow the rest into "+N" — at any window size, with no mid-line clipping.
@@ -105,7 +124,6 @@ export function WeekRow({
                 style={{
                   gridColumn: `${bar.startCol + 1} / span ${bar.span}`,
                   gridRow: bar.lane + 1,
-                  background: hexToTint(bar.event.color),
                   ["--bar-accent" as string]: bar.event.color,
                 }}
                 title={bar.event.title}
@@ -114,7 +132,8 @@ export function WeekRow({
                   onOpenEvent(bar.event);
                 }}
               >
-                {bar.isStart ? bar.event.title : " "}
+                {bar.isStart && <span className="bar-tick" />}
+                <span className="bar-label">{bar.isStart ? bar.event.title : ""}</span>
               </div>
             );
           })}
@@ -155,7 +174,14 @@ export function WeekRow({
                 </div>
               ))}
               {hidden > 0 && (
-                <div className="day-more" onClick={() => onSelectDay(day)}>
+                <div
+                  className="day-more"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setPeek({ day, x: r.left, y: r.bottom + 4 });
+                  }}
+                >
                   +{hidden}
                 </div>
               )}
@@ -163,16 +189,17 @@ export function WeekRow({
           );
         })}
       </div>
+
+      {peek && (
+        <DayPeekPopover
+          day={peek.day}
+          events={peekEvents}
+          timeFormat={timeFormat}
+          anchor={{ x: peek.x, y: peek.y }}
+          onOpenEvent={onOpenEvent}
+          onClose={() => setPeek(null)}
+        />
+      )}
     </div>
   );
-}
-
-/** Blend a hex color toward the dark background for the translucent bar fill. */
-function hexToTint(hex: string): string {
-  const m = hex.replace("#", "");
-  if (m.length !== 6) return "rgba(99,102,241,0.22)";
-  const r = parseInt(m.slice(0, 2), 16);
-  const g = parseInt(m.slice(2, 4), 16);
-  const b = parseInt(m.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, 0.22)`;
 }
