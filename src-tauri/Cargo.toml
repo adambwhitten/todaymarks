@@ -1,6 +1,6 @@
 [package]
 name = "todaymarks"
-version = "0.1.1"
+version = "0.2.0"
 description = "Todaymarks — a small, native macOS calendar for Apple Calendar."
 authors = ["Todaymarks contributors"]
 license = "MIT"
